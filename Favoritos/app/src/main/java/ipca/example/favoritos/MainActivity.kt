@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dagger.hilt.android.AndroidEntryPoint // ⬅️ NOVO IMPORT
+import dagger.hilt.android.AndroidEntryPoint
 import ipca.example.favoritos.presentation.ListaTarefasView
 import ipca.example.favoritos.presentation.LoginView
 import ipca.example.favoritos.presentation.PerfilView

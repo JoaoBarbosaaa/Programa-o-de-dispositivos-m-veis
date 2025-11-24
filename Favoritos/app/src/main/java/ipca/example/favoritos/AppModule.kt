@@ -7,20 +7,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ipca.example.favoritos.domain.TaskRepositoryImpl
 import ipca.example.favoritos.domain.TaskRepository
+
 import javax.inject.Singleton
 
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
-    @Singleton
-    @Binds
-    abstract fun bindTaskRepository(
-        taskRepositoryImpl: TaskRepositoryImpl
-    ): TaskRepository
-}
 
 
 @Module

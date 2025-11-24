@@ -3,13 +3,12 @@ package ipca.example.favoritos.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable // Importação necessária para o modificador .clickable
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Add // Novo Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,52 +16,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import ipca.example.favoritos.domain.Tarefa
 import ipca.example.favoritos.presentation.theme.FavoritosTheme
 
-@OptIn(ExperimentalMaterial3Api::class) // ⬅️ OptIn para usar CenterAlignedTopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaTarefasView(navController: NavController = rememberNavController()) {
-    // CORREÇÃO CRÍTICA: Substituir viewModel() por hiltViewModel()
     val viewModel: ListaTarefasViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
 
     var tituloNovaTarefa by remember { mutableStateOf("") }
     var descricaoNovaTarefa by remember { mutableStateOf("") }
 
-    // Estado para tarefa que está a ser editada
     var tarefaEditando by remember { mutableStateOf<Tarefa?>(null) }
 
     Scaffold(
         topBar = {
-            // 🚨 CORREÇÃO: Usar CenterAlignedTopAppBar para maior compatibilidade M3
             CenterAlignedTopAppBar(
                 title = { Text("As Minhas Tarefas") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                // Slots adicionados para satisfazer a assinatura (podem ficar vazios)
-                navigationIcon = { /* Opcional: Icone de navegação */ },
-                actions = { /* Opcional: Botões de Ação */ }
+                navigationIcon = { },
+                actions = { }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                if (tituloNovaTarefa.isNotBlank()) {
-                    viewModel.adicionarTarefa(tituloNovaTarefa, descricaoNovaTarefa)
-                    tituloNovaTarefa = ""
-                    descricaoNovaTarefa = ""
-                }
-            }) {
-                // Melhoria: Usar Icon em vez de Text no FAB
-                Icon(Icons.Filled.Add, contentDescription = "Adicionar Tarefa")
-            }
-        }
+
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -71,31 +54,42 @@ fun ListaTarefasView(navController: NavController = rememberNavController()) {
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // 1. Área de Adicionar Nova Tarefa
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
                     value = tituloNovaTarefa,
                     onValueChange = { tituloNovaTarefa = it },
                     label = { Text("Nova Tarefa") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        if (tituloNovaTarefa.isNotBlank()) {
+                            viewModel.adicionarTarefa(tituloNovaTarefa, descricaoNovaTarefa)
+                            tituloNovaTarefa = ""
+                            descricaoNovaTarefa = ""
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = tituloNovaTarefa.isNotBlank() // Desativa se o título estiver vazio
+                ) {
+                    Text("Adicionar Tarefa")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp)) // Espaço antes da lista
             }
 
-            // 2. Estado de Carregamento ou Erro
             when {
                 uiState.carregando -> {
                     CircularProgressIndicator(modifier = Modifier.padding(32.dp))
                     Text("A carregar tarefas...", modifier = Modifier.padding(top = 8.dp))
                 }
                 uiState.erro != null -> {
-                    // Exibir erro do repositório, crucial para debugging
                     Text(
                         "🚨 ERRO: ${uiState.erro}",
                         color = MaterialTheme.colorScheme.error,
@@ -105,16 +99,15 @@ fun ListaTarefasView(navController: NavController = rememberNavController()) {
                         Text("Voltar ao Login")
                     }
                 }
-                uiState.tarefas.isEmpty() -> { // ⬅️ Mensagem de estado vazio
+                uiState.tarefas.isEmpty() -> {
                     Text(
-                        "Nenhuma tarefa por agora.\nCrie uma nova usando o campo acima.",
+                        "Nenhuma tarefa por agora.",
                         modifier = Modifier.padding(32.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 else -> {
-                    // 3. Lista de Tarefas
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -134,7 +127,6 @@ fun ListaTarefasView(navController: NavController = rememberNavController()) {
         }
     }
 
-    // Diálogo de Edição
     tarefaEditando?.let { tarefa ->
         DialogoEdicaoTarefa(
             tarefa = tarefa,
@@ -180,7 +172,6 @@ fun TarefaItem(
                 }
             }
 
-            // Botão de Status (Concluído/Não Concluído)
             IconButton(onClick = onToggleConcluida) {
                 Icon(
                     imageVector = if (tarefa.concluida) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
@@ -189,7 +180,6 @@ fun TarefaItem(
                 )
             }
 
-            // Botão de Edição
             IconButton(onClick = onEdit) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
@@ -198,7 +188,6 @@ fun TarefaItem(
                 )
             }
 
-            // Botão de Eliminar
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
@@ -273,8 +262,6 @@ fun DialogoEdicaoTarefa(
 @Preview(showBackground = true)
 fun ListaTarefasViewPreview() {
     FavoritosTheme {
-        // Nota: O Preview falhará porque a ViewModel requer injeção real do Hilt
-        // Pode ser simulado usando um MOCK ViewModel ou um PreviewParameterProvider
         Text("Preview indisponível devido à dependência Hilt.")
     }
 }

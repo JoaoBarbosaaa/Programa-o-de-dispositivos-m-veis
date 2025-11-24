@@ -10,12 +10,11 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 private const val COLLECTION_TAREFAS = "tasks"
 private const val COLLECTION_PERFIS = "users"
 
 @Singleton
-class TaskRepository @Inject constructor(
+class ListaTarefasRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
@@ -53,8 +52,6 @@ class TaskRepository @Inject constructor(
 
         awaitClose { subscription.remove() }
     }
-
-    // -------- CRUD --------
 
     suspend fun addTask(tarefa: Tarefa) {
         val userId = getUserId()
@@ -98,44 +95,6 @@ class TaskRepository @Inject constructor(
             .collection(COLLECTION_TAREFAS)
             .document(tarefaId)
             .delete()
-            .await()
-    }
-
-    // -------- Autenticação --------
-
-    suspend fun login(email: String, password: String): Boolean {
-        return try {
-            auth.signInWithEmailAndPassword(email, password).await()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    suspend fun register(email: String, password: String): Boolean {
-        return try {
-            auth.createUserWithEmailAndPassword(email, password).await()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    // -------- Perfil --------
-
-    suspend fun saveUserProfile(nome: String, email: String) {
-        val userId = getUserId()
-
-        val profileData = mapOf(
-            "nome" to nome,
-            "email" to email,
-            "dataRegisto" to com.google.firebase.Timestamp.now()
-        )
-
-        firestore
-            .collection(COLLECTION_PERFIS)
-            .document(userId)
-            .set(profileData)
             .await()
     }
 }

@@ -3,8 +3,9 @@ package ipca.example.favoritos.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ipca.example.favoritos.domain.TaskRepository // Importar a INTERFACE do Domínio
+import ipca.example.favoritos.domain.ListaTarefasRepository
 import ipca.example.favoritos.domain.Tarefa
+import ipca.example.favoritos.domain.ListaTarefasState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -13,23 +14,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class ListaTarefasState(
-    val tarefas: List<Tarefa> = emptyList(),
-    val erro: String? = null,
-    val carregando: Boolean = true
-)
-
-// ➡️ Usar Hilt para injetar o Repositório
 @HiltViewModel
 class ListaTarefasViewModel @Inject constructor(
-    // ➡️ O ViewModel apenas conhece o Contrato (Interface)
-    private val repository: TaskRepository
+    private val repository: ListaTarefasRepository
 ) : ViewModel() {
 
-    // ➡️ StateFlow para lidar com o fluxo de dados em tempo real do Repositório
     val uiState: StateFlow<ListaTarefasState> = repository.getTarefasFlow()
         .map { listaTarefas ->
-            // Mapear a lista de domínio para o State da View
             ListaTarefasState(
                 tarefas = listaTarefas,
                 carregando = false,
@@ -37,14 +28,16 @@ class ListaTarefasViewModel @Inject constructor(
             )
         }
         .catch { erro ->
-            // Capturar e lidar com erros vindos do Repositório
-            emit(ListaTarefasState(erro = "Erro ao carregar tarefas: ${erro.message}", carregando = false))
+            emit(
+                ListaTarefasState(
+                    erro = "Erro ao carregar tarefas: ${erro.message}",
+                    carregando = false
+                )
+            )
         }
         .stateIn(
             scope = viewModelScope,
-            // Iniciar o fluxo quando houver coletores (Views)
             started = SharingStarted.WhileSubscribed(5000),
-            // Valor inicial
             initialValue = ListaTarefasState(carregando = true)
         )
 
@@ -55,21 +48,18 @@ class ListaTarefasViewModel @Inject constructor(
                 descricao = descricao,
                 prioridade = prioridade
             )
-            // ➡️ Delega a ação para o Repositório
             repository.addTask(novaTarefa)
         }
     }
 
     fun removerTarefa(tarefaId: String) {
         viewModelScope.launch {
-            // ➡️ Delega a ação para o Repositório
             repository.deleteTask(tarefaId)
         }
     }
 
     fun atualizarTarefa(tarefa: Tarefa) {
         viewModelScope.launch {
-            // ➡️ Delega a ação para o Repositório
             repository.updateTask(tarefa)
         }
     }

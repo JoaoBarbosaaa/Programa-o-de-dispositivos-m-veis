@@ -54,7 +54,6 @@ fun PerfilView(
                 )
             }
 
-            // TextField do Nome (editable)
             TextField(
                 value = uiState.nome ?: "",
                 onValueChange = { viewModel.alterarNomeLocal(it) },
@@ -65,7 +64,6 @@ fun PerfilView(
                 singleLine = true
             )
 
-            // TextField do Email (read-only)
             TextField(
                 value = uiState.email ?: "",
                 onValueChange = {},
@@ -112,7 +110,6 @@ fun PerfilViewPreview() {
     }
 }
 
-// Função auxiliar para logout
 private fun authSair() {
     val auth = FirebaseAuth.getInstance()
     auth.signOut()
