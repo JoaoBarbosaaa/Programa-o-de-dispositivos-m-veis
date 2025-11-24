@@ -1,4 +1,4 @@
-package ipca.example.favoritos.presentation
+package ipca.example.favoritos
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

@@ -1,13 +1,12 @@
-package ipca.example.favoritos.presentation
+package ipca.example.favoritos
 
+import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import ipca.example.favoritos.domain.TaskRepository // ⬅️ Importar a interface
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import javax.inject.Inject
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 
 data class RegistarState(
     var nome: String? = null,
@@ -15,82 +14,90 @@ data class RegistarState(
     var password: String? = null,
     var confirmarPassword: String? = null,
     var erro: String? = null,
-    var carregando: Boolean = false,
-    var isRegistrationSuccessful: Boolean = false // ⬅️ Adicionado para gestão de navegação
+    var carregando: Boolean = false
 )
 
-@HiltViewModel // ⬅️ Anotação Hilt
-class RegistarViewModel @Inject constructor(
-    // ➡️ Injeção do Contrato (TaskRepository)
-    private val repository: TaskRepository
-) : ViewModel() {
+class RegistarViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(RegistarState())
-    val uiState: StateFlow<RegistarState> = _uiState
+    companion object {
+        private const val TAG = "RegistarViewModel"
+    }
 
-    // ➡️ Funções de atualização de estado...
+    var uiState = mutableStateOf(RegistarState())
+        private set
+
+    private val auth: FirebaseAuth = Firebase.auth
+    private val db = FirebaseFirestore.getInstance()
+
     fun atualizarNome(nome: String) {
-        _uiState.value = _uiState.value.copy(nome = nome, erro = null)
+        uiState.value = uiState.value.copy(nome = nome)
     }
 
     fun atualizarEmail(email: String) {
-        _uiState.value = _uiState.value.copy(email = email, erro = null)
+        uiState.value = uiState.value.copy(email = email)
     }
 
     fun atualizarPassword(password: String) {
-        _uiState.value = _uiState.value.copy(password = password, erro = null)
+        uiState.value = uiState.value.copy(password = password)
     }
 
     fun atualizarConfirmarPassword(confirmar: String) {
-        _uiState.value = _uiState.value.copy(confirmarPassword = confirmar, erro = null)
+        uiState.value = uiState.value.copy(confirmarPassword = confirmar)
     }
 
-    // ➡️ A função agora usa corrotinas e delega a lógica ao Repositório
-    fun registar() {
-        val estado = _uiState.value
+    fun registar(onRegistoSucesso: () -> Unit) {
+        val estado = uiState.value
 
         if (estado.nome.isNullOrEmpty() || estado.email.isNullOrEmpty() ||
             estado.password.isNullOrEmpty() || estado.confirmarPassword.isNullOrEmpty()
         ) {
-            _uiState.value = estado.copy(erro = "Por favor, preencha todos os campos.")
+            uiState.value = estado.copy(erro = "Por favor, preencha todos os campos.")
             return
         }
 
         if (estado.password != estado.confirmarPassword) {
-            _uiState.value = estado.copy(erro = "As palavras-passe não coincidem.")
+            uiState.value = estado.copy(erro = "As palavras-passe não coincidem.")
             return
         }
 
-        // ⚠️ O Callback (onRegistoSucesso) é substituído pela atualização de estado
-        _uiState.value = estado.copy(carregando = true, erro = null)
+        uiState.value = estado.copy(carregando = true, erro = null)
 
-        viewModelScope.launch {
-            try {
-                // ➡️ Chama o método registar no Repositório
-                val registrationSuccess = repository.register(estado.email!!, estado.password!!)
-
-                if (registrationSuccess) {
-                    // Após criar a conta, guarda os dados do perfil (opcional)
-                    repository.saveUserProfile(estado.nome!!, estado.email!!)
-
-                    _uiState.value = _uiState.value.copy(
-                        carregando = false,
-                        isRegistrationSuccessful = true
+        auth.createUserWithEmailAndPassword(estado.email!!, estado.password!!)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val utilizadorId = auth.currentUser?.uid
+                    val dadosUtilizador = hashMapOf(
+                        "nome" to estado.nome,
+                        "email" to estado.email
                     )
+
+                    if (utilizadorId != null) {
+                        db.collection("utilizadores")
+                            .document(utilizadorId)
+                            .set(dadosUtilizador)
+                            .addOnSuccessListener {
+                                Log.d(TAG, "Utilizador registado e guardado no Firestore.")
+                                uiState.value = uiState.value.copy(
+                                    carregando = false,
+                                    erro = null
+                                )
+                                onRegistoSucesso()
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w(TAG, "Erro ao guardar no Firestore", e)
+                                uiState.value = uiState.value.copy(
+                                    carregando = false,
+                                    erro = "Erro ao guardar no Firestore."
+                                )
+                            }
+                    }
                 } else {
-                    // O repositório falhou (ex: email já em uso)
-                    _uiState.value = _uiState.value.copy(
+                    Log.w(TAG, "Erro no registo", task.exception)
+                    uiState.value = uiState.value.copy(
                         carregando = false,
-                        erro = "Erro ao criar conta. Email inválido ou já em uso."
+                        erro = "Erro ao criar conta. Verifique o email ou ligação à internet."
                     )
                 }
-            } catch (e: Exception) {
-                // Erro de rede ou outra exceção não tratada
-                _uiState.value = _uiState.value.copy(
-                    carregando = false,
-                    erro = "Erro de comunicação: ${e.message}"
-                )
             }
-        }
     }
 }

@@ -1,5 +1,3 @@
-// ipca.example.favoritos/AppModule.kt
-
 package ipca.example.favoritos
 
 import com.google.firebase.auth.FirebaseAuth
@@ -9,7 +7,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ipca.example.favoritos.data.repository.TaskRepositoryImpl
+import ipca.example.favoritos.domain.TaskRepositoryImpl
 import ipca.example.favoritos.domain.TaskRepository
 import javax.inject.Singleton
 

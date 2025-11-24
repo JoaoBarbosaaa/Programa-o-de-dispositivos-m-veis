@@ -12,12 +12,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint // ⬅️ NOVO IMPORT
 import ipca.example.favoritos.presentation.ListaTarefasView
 import ipca.example.favoritos.presentation.LoginView
 import ipca.example.favoritos.presentation.PerfilView
-import ipca.example.favoritos.presentation.RegistarView
+//import ipca.example.favoritos.presentation.RegistarView
 import ipca.example.favoritos.presentation.theme.FavoritosTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,7 +125,6 @@ fun HomeView(navController: androidx.navigation.NavController) {
     }
 }
 
-// Função auxiliar para logout
 private fun authSair() {
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
     auth.signOut()

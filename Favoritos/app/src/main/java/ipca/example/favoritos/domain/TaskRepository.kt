@@ -1,5 +1,7 @@
 package ipca.example.favoritos.domain
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Contrato (Interface) para o acesso a dados de Tarefas.
  * Define o que a camada de dados DEVE fazer, sem especificar COMO.
@@ -7,22 +9,18 @@ package ipca.example.favoritos.domain
  */
 interface TaskRepository {
 
-    // Funções para CRUD
-    suspend fun getTasks(): List<Tarefa>
+    // ➡️ CORREÇÃO: Esta função substitui a obsoleta 'getTasks()' e usa Flow para tempo real.
+    fun getTarefasFlow(): Flow<List<Tarefa>>
+
+    // --- Funções CRUD ---
     suspend fun addTask(tarefa: Tarefa)
     suspend fun updateTask(tarefa: Tarefa)
-    suspend fun deleteTask(tarefa: Tarefa)
 
-    // Funções de Autenticação/Perfil (Se for tudo no mesmo repo)
+    // ➡️ CORREÇÃO: Usa o ID (String) para eliminar, igual à implementação.
+    suspend fun deleteTask(tarefaId: String)
+
+    // --- Funções de Autenticação e Perfil ---
     suspend fun login(email: String, password: String): Boolean
-    // ... outras funções de Perfil
-
-        // ... outros métodos (login, getTarefasFlow, etc.)
-
-        // Adicione a função de registo
-        suspend fun register(email: String, password: String): Boolean
-
-        // Adicione a função para guardar o perfil no Firestore após o registo
-        suspend fun saveUserProfile(nome: String, email: String)
-
+    suspend fun register(email: String, password: String): Boolean
+    suspend fun saveUserProfile(nome: String, email: String)
 }
