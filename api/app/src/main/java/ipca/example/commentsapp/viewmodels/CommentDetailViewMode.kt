@@ -1,74 +1,37 @@
 package ipca.example.commentsapp.viewmodels
-import androidx.compose.runtime.mutableStateOf
+
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ipca.example.commentsapp.models.Comment
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
-import java.io.IOException
+import ipca.example.commentsapp.repository.CommentRepository
+import kotlinx.coroutines.flow.MutableStateFlow // NOVO IMPORT
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-data class CommentDetailState(
-    val comment: Comment? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+class CommentDetailViewModel(private val repository: CommentRepository) : ViewModel() {
 
-class CommentDetailViewModel : ViewModel() {
+    private val _commentDetails = MutableStateFlow<Comment?>(null)
+    val commentDetails: StateFlow<Comment?> = _commentDetails
 
-    var uiState = mutableStateOf(CommentDetailState())
-        private set
 
-    fun fetchCommentDetail(id: String) {
-        uiState.value = uiState.value.copy(isLoading = true, error = null)
+    fun loadCommentDetails(commentId: String) {
 
-        val url = "https://dummyjson.com/comments/$id"
+        val idInt = commentId.toIntOrNull()
 
-        val request = Request.Builder()
-            .url(url)
-            .build()
+        if (idInt == null) {
+            _commentDetails.value = null
+            return
+        }
 
-        val client = OkHttpClient()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                uiState.value = uiState.value.copy(
-                    isLoading = false,
-                    error = e.message
-                )
+        viewModelScope.launch {
+            repository.getCommentById(idInt).collect { comment ->
+                _commentDetails.value = comment
             }
+        }
 
-            override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    if (!response.isSuccessful){
-                        uiState.value = uiState.value.copy(
-                            isLoading = false,
-                            error = "Erro no servidor: Código ${response.code}"
-                        )
-                        return
-                    }
-
-                    val commentResult = response.body!!.string()
-
-                    try {
-                        val jsonObject = JSONObject(commentResult)
-                        val commentObject = Comment.fromJson(jsonObject)
-
-                        uiState.value = uiState.value.copy(
-                            isLoading = false,
-                            comment = commentObject,
-                            error = null
-                        )
-                    } catch (e: Exception) {
-                        uiState.value = uiState.value.copy(
-                            isLoading = false,
-                            error = "Erro ao analisar dados: ${e.message}"
-                        )
-                    }
-                }
-            }
-        })
     }
+
 }

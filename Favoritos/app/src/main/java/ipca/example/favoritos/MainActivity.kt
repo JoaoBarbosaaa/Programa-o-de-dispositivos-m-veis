@@ -12,7 +12,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import ipca.example.favoritos.ui.theme.FavoritosTheme
+import ipca.example.favoritos.presentation.ListaTarefasView
+import ipca.example.favoritos.presentation.LoginView
+import ipca.example.favoritos.presentation.PerfilView
+import ipca.example.favoritos.presentation.RegistarView
+import ipca.example.favoritos.presentation.theme.FavoritosTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +72,7 @@ fun HomeView(navController: androidx.navigation.NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "🏋️‍♂️ Bem-vindo à tua agenda",
+                text = "🏋️‍♂️ Bem-vindo aos teus lembretes",
                 style = MaterialTheme.typography.headlineMedium
             )
 

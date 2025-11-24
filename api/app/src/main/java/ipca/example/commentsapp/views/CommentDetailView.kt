@@ -1,72 +1,95 @@
 package ipca.example.commentsapp.views
-import androidx.compose.foundation.layout.Box
+
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api // NOVO IMPORT NECESSÁRIO
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar // O TopAppBar é experimental
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import ipca.example.commentsapp.viewmodels.CommentDetailViewModel
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommentDetailView(
     navController: NavController,
-    commentId: String
+    commentId: String,
+    viewModel: CommentDetailViewModel
 ) {
-    val viewModel: CommentDetailViewModel = viewModel()
-    val state by viewModel.uiState
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchCommentDetail(commentId)
+    LaunchedEffect(commentId) {
+        viewModel.loadCommentDetails(commentId)
     }
 
-
+    val comment by viewModel.commentDetails.collectAsState(initial = null)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Comentário de ${state.comment?.user?.username}") }, // 🌟 Usar o nome descodificado
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
+                title = { Text("Detalhes do Comentário") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 }
             )
         }
     ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Corpo do Comentário:",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = state.comment?.body?:"",
-                style = MaterialTheme.typography.bodyLarge
-            )
+
+            if (comment == null) {
+                val idInt = commentId.toIntOrNull()
+                if (idInt != null) {
+                    CircularProgressIndicator()
+                } else {
+                    Text(text = "ID de Comentário Inválido.", color = MaterialTheme.colorScheme.error)
+                }
+            } else {
+
+                val loadedComment = comment!!
+
+
+                Text(
+                    text = loadedComment.body,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Outros dados
+                Text(
+                    text = "Post ID: ${loadedComment.postId} | Likes: ${loadedComment.likes}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
