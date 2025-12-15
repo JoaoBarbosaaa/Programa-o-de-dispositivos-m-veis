@@ -1,15 +1,14 @@
-package ipca.example.commentsapp.repository
+package ipca.example.commentsapp
 
-import ipca.example.commentsapp.db.CommentDao
 import ipca.example.commentsapp.models.Comment
 import kotlinx.coroutines.flow.Flow
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CommentRepository(private val commentDao: CommentDao) {
 
-
     fun getAllComments(): Flow<List<Comment>> {
-
         return commentDao.getAllCommentsForListScreen()
     }
 
@@ -23,4 +22,15 @@ class CommentRepository(private val commentDao: CommentDao) {
         return commentDao.getCommentById(commentId)
     }
 
+    fun getLikedComments(): Flow<List<Comment>> {
+        return commentDao.getLikedComments()
+    }
+
+
+    fun toggleLike(commentId: Int, like: Boolean) {
+        val increment = if (like) 1 else -1
+        CoroutineScope(Dispatchers.IO).launch {
+            commentDao.toggleLike(commentId, increment, like)  // <-- Nome correto
+        }
+    }
 }

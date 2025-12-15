@@ -1,16 +1,11 @@
 package ipca.example.commentsapp.views
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,19 +16,31 @@ import androidx.navigation.NavController
 import ipca.example.commentsapp.viewmodels.CommentsListViewModel
 import ipca.example.commentsapp.views.components.CommentViewCell
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommentsListView(
     navController: NavController,
     viewModel: CommentsListViewModel
-){
+) {
 
     val comments by viewModel.commentsListFlow.collectAsState()
-
     val syncState by viewModel.syncState
 
     Scaffold(
         topBar = {
-
+            TopAppBar(
+                title = { Text("Comentários") }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("liked") }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Ver comentários com like"
+                )
+            }
         }
     ) { paddingValues ->
 
@@ -42,7 +49,6 @@ fun CommentsListView(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-
 
             if (syncState.isLoading) {
                 Box(
@@ -69,7 +75,11 @@ fun CommentsListView(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(comments) { comment ->
-                        CommentViewCell(comment = comment, navController = navController)
+                        CommentViewCell(
+                            comment = comment,
+                            navController = navController,
+                            viewModel = viewModel
+                        )
                     }
                 }
             }

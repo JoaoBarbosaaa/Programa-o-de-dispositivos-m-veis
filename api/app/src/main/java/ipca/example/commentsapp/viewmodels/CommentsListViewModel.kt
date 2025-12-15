@@ -4,10 +4,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ipca.example.commentsapp.models.Comment
-import ipca.example.commentsapp.repository.CommentRepository // <-- NOVO: Dependência do Repositório
+import ipca.example.commentsapp.CommentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.Call
@@ -26,14 +27,15 @@ data class CommentsListState(
 
 class CommentsListViewModel(private val repository: CommentRepository) : ViewModel() {
 
-
     val commentsListFlow: StateFlow<List<Comment>> = repository.getAllComments()
+        .map { list ->
+            list.map { it.copy() } // Força emissão sempre
+        }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList() // Valor inicial vazio
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
         )
-
 
     var syncState = mutableStateOf(CommentsListState(isLoading = false, error = null))
         private set
@@ -51,7 +53,6 @@ class CommentsListViewModel(private val repository: CommentRepository) : ViewMod
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                // Erro de rede: Atualiza o estado de sincronização
                 syncState.value = syncState.value.copy(
                     isLoading = false,
                     error = "Erro de rede: ${e.message}"
@@ -74,11 +75,9 @@ class CommentsListViewModel(private val repository: CommentRepository) : ViewMod
                         val jsonResult = JSONObject(commentsResult)
                         val commentsList = Comment.fromJsonArray(jsonResult)
 
-
                         viewModelScope.launch(Dispatchers.IO) {
                             repository.insertAll(commentsList)
                         }
-
 
                         syncState.value = syncState.value.copy(
                             isLoading = false,
@@ -94,5 +93,10 @@ class CommentsListViewModel(private val repository: CommentRepository) : ViewMod
                 }
             }
         })
+    }
+
+
+    fun toggleLike(commentId: Int, liked: Boolean) {
+        repository.toggleLike(commentId, liked)
     }
 }

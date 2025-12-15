@@ -1,4 +1,4 @@
-package ipca.example.commentsapp.db // Altere o package conforme o seu projeto
+package ipca.example.commentsapp
 
 import androidx.room.*
 import ipca.example.commentsapp.models.Comment
@@ -12,7 +12,6 @@ interface CommentDao {
 
     @Query("SELECT * FROM comments ORDER BY id DESC")
     fun getAllCommentsForListScreen(): Flow<List<Comment>>
-
 
     @Query("SELECT * FROM comments WHERE id = :commentId")
     fun getCommentById(commentId: Int): Flow<Comment?>
@@ -28,4 +27,15 @@ interface CommentDao {
 
     @Query("DELETE FROM comments WHERE postId = :postId")
     suspend fun deleteCommentsForPost(postId: Int)
+
+    @Query("""
+        UPDATE comments 
+        SET likes = likes + :increment, 
+            isLikedByMe = :liked 
+        WHERE id = :commentId
+    """)
+    suspend fun toggleLike(commentId: Int, increment: Int, liked: Boolean)
+
+    @Query("SELECT * FROM comments WHERE isLikedByMe = 1 ORDER BY id DESC")
+    fun getLikedComments(): Flow<List<Comment>>
 }

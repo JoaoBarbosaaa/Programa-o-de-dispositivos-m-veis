@@ -12,7 +12,8 @@ data class Comment (
     var id      : Int,
     var body    : String,
     var postId  : Int,
-    var likes   : Int
+    var likes   : Int,
+    var isLikedByMe: Boolean = false
 ) {
     @Ignore
     var user    : User? = null

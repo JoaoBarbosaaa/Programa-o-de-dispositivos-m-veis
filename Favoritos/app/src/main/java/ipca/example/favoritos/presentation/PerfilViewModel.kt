@@ -64,12 +64,12 @@ class PerfilViewModel : ViewModel() {
             }
     }
 
-    // Apenas atualiza o estado local do TextField
+
     fun alterarNomeLocal(novoNome: String) {
         uiState.value = uiState.value.copy(nome = novoNome, sucesso = null, erro = null)
     }
 
-    // Atualiza o Firestore apenas ao clicar no botão
+
     fun atualizarNomeFirestore() {
         val utilizadorId = auth.currentUser?.uid ?: return
         val nome = uiState.value.nome ?: return
